@@ -1,0 +1,34 @@
+import requests
+import json
+from datetime import datetime, timedelta
+
+# Kannur Coordinates
+LAT = 11.8745
+LONG = 75.3704
+METHOD = 2  # Islamic Society of North America or adjust based on local preference (e.g., 4 for Karachi/India)
+
+def generate_year_data(year):
+    prayer_data = {}
+    start_date = datetime(year, 1, 1)
+    
+    for i in range(365):
+        current_date = start_date + timedelta(days=i)
+        date_str = current_date.strftime("%d-%m")
+        
+        # Calling Aladhan API to get accurate timings for Kannur
+        api_url = f"http://api.aladhan.com/v1/timings/{current_date.strftime('%d-%m-%Y')}?latitude={LAT}&longitude={LONG}&method={METHOD}"
+        
+        response = requests.get(api_url).json()
+        t = response['data']['timings']
+        
+        # Formatting as HHMM to save Arduino memory
+        # Order: Fajr, Dhuhr, Asr, Maghrib, Isha
+        f_timings = f"{t['Fajr'].replace(':','')},{t['Dhuhr'].replace(':','')},{t['Asr'].replace(':','')},{t['Maghrib'].replace(':','')},{t['Isha'].replace(':','')}"
+        
+        prayer_data[date_str] = f_timings
+        print(f"Processed: {date_str}")
+
+    with open('timings.json', 'w') as f:
+        json.dump(prayer_data, f, indent=2)
+
+generate_year_data(2026)
